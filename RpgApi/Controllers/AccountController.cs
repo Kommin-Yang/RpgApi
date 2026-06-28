@@ -9,12 +9,10 @@ namespace RpgApi.Controllers;
 public class AccountController : ControllerBase
 {
     private readonly AccountService _accountService;
-    private readonly JwtService _jwtService;
 
     public AccountController(AccountService accountService, JwtService jwtService)
     {
         _accountService = accountService;
-        _jwtService = jwtService;
     }
 
     // Endpoint to create an account
@@ -38,18 +36,11 @@ public class AccountController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {
-        var account = await _accountService.Login(dto);
+        var token = await _accountService.Login(dto);
 
-        if (account == null)
-            return Unauthorized();
+        if (token == null)
+            return Unauthorized("Email or password erroned!");
 
-        var token = _jwtService.GernerateToken(account);
-
-        return Ok(new
-        {
-            token,
-            accountId = account.Id,
-            username = account.Username
-        });
+        return Ok(new { token });
     }
 }

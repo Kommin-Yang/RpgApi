@@ -15,11 +15,14 @@ public class ItemService
     }
 
     // A BIG RANDOM GENERATE ITEMINSTANCE \\
-    public async Task<ItemInstance?> DropRandomItem(GetCharacterDto dto, int userId)
+    public async Task<ItemInstance?> DropRandomItem(GetCharacterDto dto, int userId, int characterId)
     {
-        var character = await _context.Characters
+        var character = await _context.Characters.
+            Include(c => c.Inventory).
+            Include(c => c.Equipements).
+            Include(c => c.Stats)
             .FirstOrDefaultAsync(c =>
-            c.Id == dto.Id &&
+            c.Id == characterId &&
             c.AccountId == userId);
 
         if (character == null)

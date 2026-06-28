@@ -9,4 +9,12 @@ public static class ClaimsPrincipalExtensions
         return int.Parse(
             user.FindFirst(ClaimTypes.NameIdentifier)!.Value);
     }
+
+    public static int? GetCharacterId(this ClaimsPrincipal user)
+    {
+        var claim = user.FindFirst("CharacterId");
+        if (claim == null)
+            return null;
+        return int.Parse(claim!.Value);
+    }
 }

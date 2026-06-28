@@ -3,16 +3,19 @@ using Microsoft.EntityFrameworkCore;
 using RpgApi.Data;
 using RpgApi.DTOs;
 using RpgApi.Models;
+using System.Security.Claims;
 
 namespace RpgApi.Services;
 
 public class AccountService
 {
     private readonly RpgDbContext _context;
+    private readonly JwtService _jwtService;
 
-    public AccountService(RpgDbContext context)
+    public AccountService(RpgDbContext context, JwtService jwtService)
     {
         _context = context;
+        _jwtService = jwtService;
     }
 
     public async Task<Account> RegisterAccount(RegisterAccountDto dto)
@@ -35,7 +38,7 @@ public class AccountService
         return account;
     }
 
-    public async Task<Account?> Login(LoginDto dto)
+    public async Task<string?> Login(LoginDto dto)
     {
         var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == dto.Email);
     
@@ -53,6 +56,15 @@ public class AccountService
             return null;
         }
 
-        return account;
+        // Account verification succeed! Now Generate a token!
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString())
+        };
+
+        var token = _jwtService.GernerateToken(claims);
+
+        return token;
     }
 }

@@ -23,11 +23,12 @@ public class ItemController : ControllerBase
     public async Task<IActionResult> GenerateRandomItem(GetCharacterDto dto)
     {
         var userId = User.GetUserId();
+        var characterId = User.GetCharacterId();
 
-        var itemInstance = await _itemService.DropRandomItem(dto, userId);
+        var itemInstance = await _itemService.DropRandomItem(dto, userId, characterId!.Value);
 
         if (itemInstance == null)
-            return NotFound();
+            return NotFound("Not created!");
 
         return Ok(itemInstance);
     }

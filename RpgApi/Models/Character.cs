@@ -1,29 +1,10 @@
 ﻿namespace RpgApi.Models;
 
-public enum StatType
-{
-    Strength = 1,
-    Agility = 2,
-    Vitality = 3,
-    Intelligence = 4,
-
-    Defense = 5,
-
-    Health = 6,
-    Mana = 7,
-
-    CriticalRate = 8,
-    CriticalDamage = 9,
-
-    AttackSpeed = 10,
-    LifeSteal = 11
-}
-
 public class Character
 {
     public int Id { get; set; }
 
-    public required string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     public int Level { get; set; } = 1;
 

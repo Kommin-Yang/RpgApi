@@ -1,14 +1,5 @@
 ﻿namespace RpgApi.Models;
 
-public enum ItemType
-{
-    Weapon = 1,
-    Armor,
-    Consumable,
-    Miscellaneous,
-    QuestItem
-}
-
 public class Item
 {
     public int Id { get; set; }

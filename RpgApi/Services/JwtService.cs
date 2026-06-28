@@ -1,5 +1,4 @@
 ﻿using Microsoft.IdentityModel.Tokens;
-using RpgApi.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -15,14 +14,8 @@ public class JwtService
         _configuration = configuration;
     }
 
-    public string GernerateToken(Account account)
+    public string GernerateToken(List<Claim> claims)
     {
-        var claims = new[]
-        {
-            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-            new Claim(ClaimTypes.Name, account.Username)
-        };
-
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
 

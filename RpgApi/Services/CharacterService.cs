@@ -2,16 +2,19 @@
 using RpgApi.Data;
 using RpgApi.DTOs;
 using RpgApi.Models;
+using System.Security.Claims;
 
 namespace RpgApi.Services;
 
 public class CharacterService
 {
     private readonly RpgDbContext _context;
+    private readonly JwtService _jwtService;
 
-    public CharacterService(RpgDbContext context)
+    public CharacterService(RpgDbContext context, JwtService jwtService)
     {
         _context = context;
+        _jwtService = jwtService;
     }
 
     public async Task<Character> CreateCharacter(CreateCharacterDto dto, int userId)
@@ -31,16 +34,30 @@ public class CharacterService
 
         _context.Characters.Add(character);
         await _context.SaveChangesAsync();
-        /*
-        character.Stats = CreateDefaultStats(character.Id);
-        character.Inventory = CreateDefaultInventory(character.Id);
-        character.Equipements = CreateDefaultEquipements(character.Id);
 
-        await _context.SaveChangesAsync();
-        */
         return character;
     }
 
+    public async Task<string?> SelectCharacter(SelectCharacterDto dto, int userId)
+    {
+        var character = await _context.Characters.FirstOrDefaultAsync(
+            c => c.Id == dto.CharacterId && 
+            c.AccountId == userId);
+
+        if (character == null)
+            return null;
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim("CharacterId", character.Id.ToString())
+        };
+
+        var token = _jwtService.GernerateToken(claims);
+
+        return token;
+    }
+    
     public async Task<Character?> GetCharacter(GetCharacterDto dto)
     {
         Character? character;
@@ -65,11 +82,11 @@ public class CharacterService
         return character;
     }
 
-    public async Task<Character?> AddXP(AddXPDto dto, int userId)
+    public async Task<Character?> AddXP(AddXPDto dto, int userId, int characterId)
     {
         var character = await _context.Characters
             .FirstOrDefaultAsync(c =>
-            c.Id == dto.Id &&
+            c.Id == characterId &&
             c.AccountId == userId);
 
         if (character == null)
@@ -88,6 +105,50 @@ public class CharacterService
         await _context.SaveChangesAsync();
 
         return character;
+    }
+
+    public async Task<string> Attack(AttackDto dto, int userId, int characterId)
+    {
+        var character = await _context.Characters
+            .Include(c => c.Stats)
+            .Include(c => c.Equipements)
+            .Include(c => c.Inventory)
+            .FirstOrDefaultAsync(c =>
+            c.Id == characterId &&
+            c.AccountId == userId);
+
+        if (character == null)
+            return "Character not found";
+
+        var enemy = await _context.Characters
+            .Include(c => c.Stats)
+            .Include(c => c.Equipements)
+            .Include(c => c.Inventory)
+            .FirstOrDefaultAsync(c =>
+            c.Id == dto.IdAttacked);
+
+        if (enemy == null)
+            return "Enemy not found";
+
+        var characterStats = character.Stats.ToDictionary(s => s.Type);
+        var enemyStats = enemy.Stats.ToDictionary(s => s.Type);
+
+        int randCrit = Random.Shared.Next(100);
+        bool isCrit = false;
+
+        if(randCrit <= characterStats[StatType.CriticalRate].Value)
+            isCrit = true;
+
+        int rawDamage = characterStats[StatType.Strength].Value * 2 +
+            characterStats[StatType.Agility].Value;
+
+        enemyStats[StatType.Health].Value -= rawDamage + (isCrit ? (rawDamage *
+            (int)Math.Round(characterStats[StatType.CriticalDamage].Value / 100.0)) : 0) - 
+            enemyStats[StatType.Defense].Value;
+
+        await _context.SaveChangesAsync();
+
+        return "The character attacked";
     }
 
     public async Task<List<Statistics>?> GetStats(GetCharacterDto dto)
@@ -114,7 +175,6 @@ public class CharacterService
         {
             var stat = new Statistics
             {
-                //CharacterId = characterId,
                 Type = statType,
                 Value = 0
             };
@@ -160,7 +220,6 @@ public class CharacterService
     {
         return new Inventory
         {
-            //CharacterId = characterId,
             ItemInstances = []
         };
     }
@@ -171,7 +230,6 @@ public class CharacterService
         {
             new Equipement
             {
-                //CharacterId = characterId,
                 ItemInstanceId = 1,
                 Slot = EquipmentSlot.Weapon
             }

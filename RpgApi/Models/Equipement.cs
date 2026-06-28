@@ -2,16 +2,6 @@
 
 namespace RpgApi.Models;
 
-public enum EquipmentSlot
-{
-    Helmet = 1,
-    Chest,
-    Hands,
-    Legs,
-    Foots,
-    Weapon
-}
-
 [Table("CharacterEquipment")]
 public class Equipement
 {
