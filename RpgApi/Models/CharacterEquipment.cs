@@ -1,9 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace RpgApi.Models;
 
-namespace RpgApi.Models;
-
-[Table("CharacterEquipment")]
-public class Equipement
+public class CharacterEquipment
 {
     public int Id { get; set; }
 

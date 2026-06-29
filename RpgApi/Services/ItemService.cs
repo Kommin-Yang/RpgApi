@@ -28,7 +28,7 @@ public class ItemService
         if (character == null)
             return null;
 
-        Inventory? inventory = character.Inventory;
+        CharacterInventory? inventory = character.Inventory;
 
         if (inventory == null)
             return null;
@@ -144,7 +144,7 @@ public class ItemService
                 randomStatValue = Random.Shared.Next(1 + (int)itemRarity / 2, 5 + (int)itemRarity);
             }
 
-            ItemStats? uniqueStat = itemInstance.Stats.FirstOrDefault(c => c.StatType == statType);
+            ItemStat? uniqueStat = itemInstance.Stats.FirstOrDefault(c => c.StatType == statType);
 
             if (uniqueStat != null)
             {
@@ -187,7 +187,7 @@ public class ItemService
         return instance;
     }
 
-    public async Task<List<ItemStats>?> GetItemInstanceStats(GetItemDto dto)
+    public async Task<List<ItemStat>?> GetItemInstanceStats(GetItemDto dto)
     {
         var instance = await _context.ItemInstances.FindAsync(dto.ItemInstanceId);
 

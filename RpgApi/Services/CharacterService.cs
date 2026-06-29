@@ -9,43 +9,63 @@ namespace RpgApi.Services;
 public class CharacterService
 {
     private readonly RpgDbContext _context;
+    private readonly GameState _gameState;
     private readonly JwtService _jwtService;
 
-    public CharacterService(RpgDbContext context, JwtService jwtService)
+    public CharacterService(RpgDbContext context,
+        GameState gameState, JwtService jwtService)
     {
         _context = context;
+        _gameState = gameState;
         _jwtService = jwtService;
     }
 
-    public async Task<Character> CreateCharacter(CreateCharacterDto dto, int userId)
+    public async Task<Character?> CreateCharacter(CreateCharacterDto dto, int userId)
     {
-        var character = new Character
+        if (await _context.Characters.AnyAsync(c => c.Name == dto.Name))
+            return null;
+
+        try
         {
-            Name = dto.Name,
-            Level = 1,
-            XP = 0,
-            XPToNextLevel = 100,
-            AccountId = userId,
+            var character = new Character
+            {
+                Name = dto.Name,
+                Level = 1,
+                XP = 0,
+                XPToNextLevel = 100,
+                AccountId = userId,
 
-            Stats = CreateDefaultStats(),
-            Inventory = CreateDefaultInventory(),
-            Equipements = CreateDefaultEquipements()
-        };
+                Stats = CreateDefaultStats(),
+                Inventory = CreateDefaultInventory(),
+                Equipements = CreateDefaultEquipements()
+            };
 
-        _context.Characters.Add(character);
-        await _context.SaveChangesAsync();
+            _context.Characters.Add(character);
+            await _context.SaveChangesAsync();
 
-        return character;
+            return character;
+        }
+        catch (DbUpdateException)
+        {
+            return null;
+            throw;
+        }
     }
 
     public async Task<string?> SelectCharacter(SelectCharacterDto dto, int userId)
     {
-        var character = await _context.Characters.FirstOrDefaultAsync(
+        var character = await _context.Characters
+            .Include(c => c.Stats)
+            .Include(c => c.Inventory)
+            .Include(c => c.Equipements)
+            .FirstOrDefaultAsync(
             c => c.Id == dto.CharacterId && 
             c.AccountId == userId);
 
         if (character == null)
             return null;
+
+        _gameState.AddPlayer(character); // Add the character selected and connected in the RAM
 
         var claims = new List<Claim>
         {
@@ -82,76 +102,60 @@ public class CharacterService
         return character;
     }
 
-    public async Task<Character?> AddXP(AddXPDto dto, int userId, int characterId)
+    public string AddXP(AddXPDto dto, int userId, int characterId)
     {
-        var character = await _context.Characters
-            .FirstOrDefaultAsync(c =>
-            c.Id == characterId &&
-            c.AccountId == userId);
+        // Get the one who attacks in RAM
+        var character = _gameState.GetPlayer(characterId);
+        if (character == null || character.Character.AccountId != userId)
+            return "Character not found or not connected";
 
-        if (character == null)
-            return null;
+        character.Character.XP += dto.XPAmount;
 
-        character.XP += dto.XPAmount;
-
-        while (character.XP >= character.XPToNextLevel)
+        while (character.Character.XP >= character.Character.XPToNextLevel)
         {
-            character.XP -= character.XPToNextLevel;
-            character.Level++;
-            character.XPToNextLevel = (int)(character.XPToNextLevel * 1.2);
-            character.PointsToAllocate += 5;
+            character.Character.XP -= character.Character.XPToNextLevel;
+            character.Character.Level++;
+            character.Character.XPToNextLevel = (int)(character.Character.XPToNextLevel * 1.2);
+            character.Character.PointsToAllocate += 5;
         }
 
-        await _context.SaveChangesAsync();
-
-        return character;
+        return $"You won {dto.XPAmount} XP";
     }
 
-    public async Task<string> Attack(AttackDto dto, int userId, int characterId)
+    public string Attack(AttackDto dto, int userId, int characterId)
     {
-        var character = await _context.Characters
-            .Include(c => c.Stats)
-            .Include(c => c.Equipements)
-            .Include(c => c.Inventory)
-            .FirstOrDefaultAsync(c =>
-            c.Id == characterId &&
-            c.AccountId == userId);
+        // Get the one who attacks in RAM
+        var character = _gameState.GetPlayer(characterId);
+        if (character == null || character.Character.AccountId != userId)
+            return "Character not found or not connected";
 
-        if (character == null)
-            return "Character not found";
-
-        var enemy = await _context.Characters
-            .Include(c => c.Stats)
-            .Include(c => c.Equipements)
-            .Include(c => c.Inventory)
-            .FirstOrDefaultAsync(c =>
-            c.Id == dto.IdAttacked);
-
+        // Get the one who is attacked in RAM
+        var enemy = _gameState.GetPlayer(dto.IdAttacked);
         if (enemy == null)
-            return "Enemy not found";
+            return "Enemy not found or dead";
 
-        var characterStats = character.Stats.ToDictionary(s => s.Type);
-        var enemyStats = enemy.Stats.ToDictionary(s => s.Type);
+        var attacker = _gameState.GetPlayer(characterId);
+        var target = _gameState.GetPlayer(dto.IdAttacked);
 
-        int randCrit = Random.Shared.Next(100);
-        bool isCrit = false;
+        var characterStats = attacker!.CachedStats;
+        var enemyStats = target!.CachedStats;
 
-        if(randCrit <= characterStats[StatType.CriticalRate].Value)
-            isCrit = true;
+        double randCrit = Random.Shared.NextDouble();
+        bool isCrit = randCrit * 100.0 <= characterStats[StatType.CriticalRate].Value;
 
-        int rawDamage = characterStats[StatType.Strength].Value * 2 +
+        double rawDamage = characterStats[StatType.Strength].Value * 2 +
             characterStats[StatType.Agility].Value;
 
-        enemyStats[StatType.Health].Value -= rawDamage + (isCrit ? (rawDamage *
-            (int)Math.Round(characterStats[StatType.CriticalDamage].Value / 100.0)) : 0) - 
+        double totalDamage = rawDamage + (isCrit ? (rawDamage *
+            (int)Math.Round(characterStats[StatType.CriticalDamage].Value / 100.0)) : 0) -
             enemyStats[StatType.Defense].Value;
 
-        await _context.SaveChangesAsync();
+        enemyStats[StatType.Health].Value -= totalDamage;
 
-        return "The character attacked";
+        return $"You attacked and dealt {totalDamage} damage.";
     }
 
-    public async Task<List<Statistics>?> GetStats(GetCharacterDto dto)
+    public async Task<List<CharacterStatistic>?> GetStats(GetCharacterDto dto)
     {
         Character? character = await _context.Characters.Include(c => c.Stats)
             .FirstOrDefaultAsync(c => c.Id == dto.Id);
@@ -167,13 +171,13 @@ public class CharacterService
         return stats;
     }
 
-    private List<Statistics> CreateDefaultStats()
+    private List<CharacterStatistic> CreateDefaultStats()
     {
-        var stats = new List<Statistics>();
+        var stats = new List<CharacterStatistic>();
 
         foreach (StatType statType in Enum.GetValues<StatType>())
         {
-            var stat = new Statistics
+            var stat = new CharacterStatistic
             {
                 Type = statType,
                 Value = 0
@@ -194,7 +198,7 @@ public class CharacterService
         return stats;
     }
 
-    private void UpdateDerivedStats(List<Statistics> statistics)
+    private void UpdateDerivedStats(List<CharacterStatistic> statistics)
     {
         var stats = statistics.ToDictionary(s => s.Type);
 
@@ -216,19 +220,19 @@ public class CharacterService
             (int)Math.Round(stats[StatType.Strength].Value / 2.0);
     }
 
-    private Inventory CreateDefaultInventory()
+    private CharacterInventory CreateDefaultInventory()
     {
-        return new Inventory
+        return new CharacterInventory
         {
             ItemInstances = []
         };
     }
 
-    private List<Equipement> CreateDefaultEquipements()
+    private List<CharacterEquipment> CreateDefaultEquipements()
     {
-        return new List<Equipement>
+        return new List<CharacterEquipment>
         {
-            new Equipement
+            new CharacterEquipment
             {
                 ItemInstanceId = 1,
                 Slot = EquipmentSlot.Weapon

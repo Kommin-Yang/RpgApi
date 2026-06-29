@@ -12,7 +12,7 @@ public class ItemInstance
 
     public ItemRarity Rarity { get; set; }
 
-    public List<ItemStats> Stats { get; set; } = [];
+    public List<ItemStat> Stats { get; set; } = [];
 
     public DateTime CreatedAt { get; set; }
 

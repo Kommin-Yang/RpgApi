@@ -1,13 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿namespace RpgApi.Models;
 
-namespace RpgApi.Models;
-
-[Table("CharacterInventory")]
-public class Inventory
+public class CharacterInventory
 {
     public int Id { get; set; }
 
     public int CharacterId { get; set; }
+
+    public int GoldAmount { get; set; }
 
     public List<ItemInstance> ItemInstances { get; set; } = [];
 }

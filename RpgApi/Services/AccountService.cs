@@ -18,24 +18,34 @@ public class AccountService
         _jwtService = jwtService;
     }
 
-    public async Task<Account> RegisterAccount(RegisterAccountDto dto)
+    public async Task<Account?> RegisterAccount(RegisterAccountDto dto)
     {
-        var hasher = new PasswordHasher<Account>();
+        if (await _context.Accounts.AnyAsync(c => c.Username == dto.Username))
+            return null;
 
-        var account = new Account
+        try
         {
-            Username = dto.Username,
-            Email = dto.Email,
-            DateCreation = DateTime.UtcNow,
-            LastLoginDate = DateTime.UtcNow
-        };
+            var hasher = new PasswordHasher<Account>();
 
-        account.PasswordHash = hasher.HashPassword(account, dto.Password);
+            var account = new Account
+            {
+                Username = dto.Username,
+                Email = dto.Email,
+                DateCreation = DateTime.UtcNow,
+                LastLoginDate = DateTime.UtcNow
+            };
 
-        _context.Accounts.Add(account);
-        await _context.SaveChangesAsync();
+            account.PasswordHash = hasher.HashPassword(account, dto.Password);
 
-        return account;
+            _context.Accounts.Add(account);
+            await _context.SaveChangesAsync();
+            return account;
+        }
+        catch (DbUpdateException)
+        {
+            return null;
+            throw;
+        }
     }
 
     public async Task<string?> Login(LoginDto dto)

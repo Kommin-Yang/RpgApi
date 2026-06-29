@@ -53,20 +53,35 @@ public class CharacterController : ControllerBase
         return Ok(new { token });
     }
 
-    // Endpoint to attack
     [Authorize]
-    [HttpPost("attack")]
-    public async Task<IActionResult> Attack(AttackDto dto)
+    [HttpPost("addXP")]
+    public IActionResult AddXP(AddXPDto dto)
     {
         var userId = User.GetUserId();
-        int? characterId = User.GetCharacterId();
-
-        var hasAttacked = await _characterService.Attack(dto, userId, characterId!.Value);
+        var characterId = User.GetCharacterId();
 
         if (characterId == null)
             return BadRequest("You are not controlling a character!");
 
-        return Ok(hasAttacked);
+        var result = _characterService.AddXP(dto, userId, characterId!.Value);
+
+        return Ok(result);
+    }
+
+    // Endpoint to attack
+    [Authorize]
+    [HttpPost("attack")]
+    public IActionResult Attack(AttackDto dto)
+    {
+        var userId = User.GetUserId();
+        int? characterId = User.GetCharacterId();
+
+        if (characterId == null)
+            return BadRequest("You are not controlling a character!");
+
+        var result = _characterService.Attack(dto, userId, characterId!.Value);
+
+        return Ok(result);
     }
 
     // Endpoint to get character
@@ -79,21 +94,6 @@ public class CharacterController : ControllerBase
             return NotFound();
 
         return Ok(character.Name);
-    }
-
-    [Authorize]
-    [HttpPost("addXP")]
-    public async Task<IActionResult> AddXP(AddXPDto dto)
-    {
-        var userId = User.GetUserId();
-        var characterId = User.GetCharacterId();
-
-        var character = await _characterService.AddXP(dto, userId, characterId!.Value);
-
-        if (character == null)
-            return NotFound();
-
-        return Ok(character);
     }
 
     // Endpoint to get character stats

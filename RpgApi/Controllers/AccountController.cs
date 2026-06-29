@@ -22,7 +22,7 @@ public class AccountController : ControllerBase
         var account = await _accountService.RegisterAccount(dto);
 
         if (account == null)
-            return NotFound();
+            return BadRequest("Username already used.");
 
         return Ok(new
         {

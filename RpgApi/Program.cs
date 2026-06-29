@@ -20,6 +20,10 @@ builder.Services.AddScoped<CharacterService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ItemService>();
 
+builder.Services.AddSingleton<GameState>();
+
+builder.Services.AddHostedService<SaveGameWorker>();
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

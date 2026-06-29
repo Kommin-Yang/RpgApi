@@ -14,9 +14,9 @@ public class Item
 
     public int RequiredLevel { get; set; } = 1;
 
-    public int BaseEffectValue { get; set; } = 0;
+    public double BaseEffectValue { get; set; } = 0;
 
-    public int BaseValue { get; set; } = 0;
+    public int GoldValue { get; set; } = 0;
 
     public int Quantity { get; set; } = 1;
 

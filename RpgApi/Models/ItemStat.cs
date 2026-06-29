@@ -1,6 +1,6 @@
 ﻿namespace RpgApi.Models;
 
-public class ItemStats
+public class ItemStat
 {
     public int Id { get; set; }
 
@@ -8,5 +8,5 @@ public class ItemStats
 
     public StatType StatType { get; set; }
 
-    public int Value { get; set; }
+    public double Value { get; set; }
 }

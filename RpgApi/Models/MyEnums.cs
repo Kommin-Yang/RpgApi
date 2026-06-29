@@ -3,11 +3,11 @@
 public enum ItemRarity
 {
     Common = 1,
-    Uncommon = 2,
-    Rare = 3,
-    Epic = 4,
-    Legendary = 5,
-    Mythic = 6
+    Uncommon,
+    Rare,
+    Epic,
+    Legendary,
+    Mythic
 }
 
 public enum ItemType
@@ -32,18 +32,23 @@ public enum EquipmentSlot
 public enum StatType
 {
     Strength = 1,
-    Agility = 2,
-    Vitality = 3,
-    Intelligence = 4,
+    Agility,
+    Vitality,
+    Intelligence,
+    Spirit,
 
-    Defense = 5,
+    AttackPower,
+    MagicPower,
 
-    Health = 6,
-    Mana = 7,
+    Defense,
+    MagicResistancce,
 
-    CriticalRate = 8,
-    CriticalDamage = 9,
+    Health,
+    Mana,
 
-    AttackSpeed = 10,
-    LifeSteal = 11
+    CriticalRate,
+    CriticalDamage,
+
+    AttackSpeed,
+    LifeSteal
 }

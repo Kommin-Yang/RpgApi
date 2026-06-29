@@ -17,9 +17,9 @@ public class Character
     // Foreign key to get Account
     public int AccountId { get; set; }
 
-    public List<Statistics> Stats { get; set; } = [];
+    public List<CharacterStatistic> Stats { get; set; } = [];
 
-    public Inventory? Inventory { get; set; }
+    public CharacterInventory? Inventory { get; set; }
 
-    public List<Equipement> Equipements { get; set; } = [];
+    public List<CharacterEquipment> Equipements { get; set; } = [];
 }
