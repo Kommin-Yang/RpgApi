@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RpgApi.Data;
+using RpgApi.Hubs;
 using RpgApi.Services;
 using System.Text;
 
@@ -45,6 +46,8 @@ builder.Services
             };
     });
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -61,5 +64,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<GameHub>("/gamehub");
 
 app.Run();

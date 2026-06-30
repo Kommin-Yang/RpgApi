@@ -22,13 +22,20 @@ public class RpgDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Account>()
-            .HasIndex(a => a.Username)
-            .IsUnique();
+        modelBuilder.Entity<Account>(entity =>
+        {
+            entity.Property(a => a.Username).HasMaxLength(50);
+            entity.HasIndex(a => a.Username).IsUnique();
 
-        modelBuilder.Entity<Character>()
-            .HasIndex(c => c.Name)
-            .IsUnique();
+            entity.Property(a => a.Email).HasMaxLength(150);
+            entity.HasIndex(a => a.Email).IsUnique();
+        });
+
+        modelBuilder.Entity<Character>(entity =>
+        {
+            entity.Property(c => c.Name).HasMaxLength(24);
+            entity.HasIndex(c => c.Name).IsUnique();
+        });
 
         modelBuilder.Entity<CharacterStatistic>()
             .HasIndex(s => new { s.CharacterId, s.Type })

@@ -20,23 +20,25 @@ public class AccountService
 
     public async Task<Account?> RegisterAccount(RegisterAccountDto dto)
     {
+        if (await _context.Accounts.AnyAsync(c => c.Email == dto.Email))
+            return null;
         if (await _context.Accounts.AnyAsync(c => c.Username == dto.Username))
             return null;
 
+        var hasher = new PasswordHasher<Account>();
+
+        var account = new Account
+        {
+            Username = dto.Username,
+            Email = dto.Email,
+            DateCreation = DateTime.UtcNow,
+            LastLoginDate = DateTime.UtcNow
+        };
+
+        account.PasswordHash = hasher.HashPassword(account, dto.Password);
+
         try
         {
-            var hasher = new PasswordHasher<Account>();
-
-            var account = new Account
-            {
-                Username = dto.Username,
-                Email = dto.Email,
-                DateCreation = DateTime.UtcNow,
-                LastLoginDate = DateTime.UtcNow
-            };
-
-            account.PasswordHash = hasher.HashPassword(account, dto.Password);
-
             _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
             return account;
@@ -44,7 +46,6 @@ public class AccountService
         catch (DbUpdateException)
         {
             return null;
-            throw;
         }
     }
 

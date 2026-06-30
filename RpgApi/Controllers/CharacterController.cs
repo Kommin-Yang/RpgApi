@@ -26,7 +26,7 @@ public class CharacterController : ControllerBase
 
     [Authorize]
     [HttpPost("createCharacter")]
-    public async Task<IActionResult> CreateCharacter(CreateCharacterDto dto)
+    public async Task<IActionResult> CreateCharacter([FromBody] CreateCharacterDto dto)
     {
         var userId = User.GetUserId();
 
@@ -55,7 +55,7 @@ public class CharacterController : ControllerBase
 
     [Authorize]
     [HttpPost("addXP")]
-    public IActionResult AddXP(AddXPDto dto)
+    public IActionResult AddXP([FromBody] AddXPDto dto)
     {
         var userId = User.GetUserId();
         var characterId = User.GetCharacterId();
@@ -71,7 +71,7 @@ public class CharacterController : ControllerBase
     // Endpoint to attack
     [Authorize]
     [HttpPost("attack")]
-    public IActionResult Attack(AttackDto dto)
+    public IActionResult Attack([FromBody] AttackDto dto)
     {
         var userId = User.GetUserId();
         int? characterId = User.GetCharacterId();

@@ -17,7 +17,7 @@ public class AccountController : ControllerBase
 
     // Endpoint to create an account
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterAccountDto dto)
+    public async Task<IActionResult> Register([FromBody] RegisterAccountDto dto)
     {
         var account = await _accountService.RegisterAccount(dto);
 
@@ -34,7 +34,7 @@ public class AccountController : ControllerBase
 
     // Endpoint to login
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDto dto)
+    public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var token = await _accountService.Login(dto);
 
